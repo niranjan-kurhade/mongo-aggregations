@@ -1,0 +1,60 @@
+// 1. Top 3 best-selling products by quantity sold
+db.orders.aggregate([
+	{ $group: { _id: "$productName", totalQuantity: { $sum: "$quantity" } } },
+	{ $sort: { totalQuantity: -1 } },
+	{ $limit: 3 }
+])
+
+// 2. Total revenue for each product category
+db.orders.aggregate([
+	{ $group: { _id: "$category", totalRevenue: { $sum: "$totalPrice" } } }
+])
+
+// 3. Average total price of all orders
+db.orders.aggregate([
+	{ $group: { _id: null, avgTotalPrice: { $avg: "$totalPrice" } } }
+])
+
+// 4. Number of orders placed each month
+db.orders.aggregate([
+	{ $addFields: { month: { $substr: ["$orderDate", 5, 2] } } },
+	{ $group: { _id: "$month", orderCount: { $sum: 1 } } }
+])
+
+// 5. Percentage of canceled orders
+db.orders.aggregate([
+	{ $group: { _id: "$status", count: { $sum: 1 } } },
+	{ $group: { _id: null, total: { $sum: "$count" }, canceled: { $sum: { $cond: [ { $eq: ["$_id", "Cancelled"] }, "$count", 0 ] } } } },
+	{ $project: { percentageCancelled: { $multiply: [ { $divide: [ "$canceled", "$total" ] }, 100 ] } } }
+])
+
+// 6. Top product category by revenue
+db.orders.aggregate([
+	{ $group: { _id: "$category", totalRevenue: { $sum: "$totalPrice" } } },
+	{ $sort: { totalRevenue: -1 } },
+	{ $limit: 1 }
+])
+
+// 7. Most frequently ordered product
+db.orders.aggregate([
+	{ $group: { _id: "$productName", orderCount: { $sum: 1 } } },
+	{ $sort: { orderCount: -1 } },
+	{ $limit: 1 }
+])
+
+// 8. Monthly revenue trend
+db.orders.aggregate([
+	{ $addFields: { month: { $substr: ["$orderDate", 5, 2] } } },
+	{ $group: { _id: "$month", monthlyRevenue: { $sum: "$totalPrice" } } },
+	{ $sort: { _id: 1 } }
+])
+
+// 9. Count of orders by status
+db.orders.aggregate([
+	{ $group: { _id: "$status", orderCount: { $sum: 1 } } }
+])
+
+// 10. Total number of orders and quantity sold
+db.orders.aggregate([
+	{ $group: { _id: null, totalOrders: { $sum: 1 }, totalQuantity: { $sum: "$quantity" } } }
+])
